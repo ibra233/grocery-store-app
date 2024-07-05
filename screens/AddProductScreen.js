@@ -6,10 +6,11 @@ import {
   insertProduct, createTables
 } from '../database/db';
 import { CameraView, Camera } from "expo-camera";
-
+import { Audio } from 'expo-av';
 const AddProductScreen = ({ navigation }) => {
   const [showCamera, setShowCamera] = useState(true);
   const [barcode, setBarcode] = useState('');
+  const [sound, setSound] = useState();
   const handleAddProduct = async (values) => {
     try {
       await createTables();
@@ -44,8 +45,27 @@ const AddProductScreen = ({ navigation }) => {
     setScanned(true);
     setShowCamera(false)
     setBarcode(data);
-    alert(`Bar code with type ${type} and data ${data} has been scanned!`);
+    playSound();
   };
+ 
+  async function playSound() {
+    console.log('Loading Sound');
+    const { sound } = await Audio.Sound.createAsync( require('../assets/read.mp3')
+    );
+    setSound(sound);
+
+    console.log('Playing Sound');
+    await sound.playAsync();
+  }
+
+  useEffect(() => {
+    return sound
+      ? () => {
+          console.log('Unloading Sound');
+          sound.unloadAsync();
+        }
+      : undefined;
+  }, [sound]);
 
   if (hasPermission === null) {
     return <Text>Requesting for camera permission</Text>;
