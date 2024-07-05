@@ -2,13 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { BarCodeScanner } from "expo-barcode-scanner";
 import { DataTable } from 'react-native-paper';
+import { Audio } from 'expo-av';
 import { getProduct } from '../database/db';
 
 const CashierScreen = () => {
   const [hasPermission, setHasPermission] = useState(null);
-  const [scanned, setScanned] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
   const [products, setProducts] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
+  const [scanned, setScanned] = useState(false);
+  const [sound, setSound] = useState();
 
   useEffect(() => {
     const getCameraPermission = async () => {
@@ -23,10 +26,24 @@ const CashierScreen = () => {
     calculateTotal();
   }, [products]);
 
+  async function playSound() {
+    const { sound } = await Audio.Sound.createAsync( require('../assets/read.mp3'));
+    setSound(sound);
+    await sound.playAsync();
+  }
+
+  useEffect(() => {
+    return sound
+      ? () => {
+          sound.unloadAsync();
+        }
+      : undefined;
+  }, [sound]);
+
   const handleBarCodeScanned = async ({ type, data }) => {
-    Alert.alert('Barkod tarandı');
     setScanned(true);
     const product = await getProduct(data);
+    playSound();
     if (product) {
       setProducts((prevProducts) => {
         const existingProduct = prevProducts.find(p => p.barcode === data);
@@ -40,6 +57,7 @@ const CashierScreen = () => {
     } else {
       Alert.alert('Ürün bulunamadı', `Barkod ${data} ile ürün bulunamadı.`);
     }
+    setTimeout(() => setScanned(false), 2000); // 2 saniye gecikme ekledik
   };
 
   const calculateTotal = () => {
@@ -79,7 +97,7 @@ const CashierScreen = () => {
         <Text style={styles.buttonText}>-</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => handleDelete(index)} style={styles.deleteButton}>
-        <Text style={styles.buttonText}>Delete</Text>
+        <Text style={styles.buttonText}>Sil</Text>
       </TouchableOpacity>
     </View>
   );
@@ -94,14 +112,12 @@ const CashierScreen = () => {
   return (
     <ScrollView>
       <View style={styles.container}>
-        {!scanned && (
-          <BarCodeScanner
-            style={styles.camera}
-            onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
-          />
-        )}
-        <TouchableOpacity onPress={() => setScanned(!scanned)} style={styles.closeButton}>
-          <Text style={styles.buttonText}>{scanned ? 'Kamerayı Aç' : 'Kamerayı Kapat'}</Text>
+      {showCamera && ( <BarCodeScanner
+          style={styles.camera}
+          onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
+        /> )}
+        <TouchableOpacity onPress={() => setShowCamera(!showCamera)} style={styles.closeButton}>
+          <Text style={styles.buttonText}>{showCamera ? 'Kamerayı Aç' : 'Kamerayı Kapat'}</Text>
         </TouchableOpacity>
         <DataTable>
           <DataTable.Header>
@@ -122,7 +138,7 @@ const CashierScreen = () => {
           ))}
         </DataTable>
         <View style={styles.totalPriceContainer}>
-          <Text style={styles.totalPriceText}>Toplam Fiyat: ${totalPrice.toFixed(2)}</Text>
+          <Text style={styles.totalPriceText}>Toplam Fiyat: {totalPrice.toFixed(2)}₺</Text>
         </View>
       </View>
     </ScrollView>
