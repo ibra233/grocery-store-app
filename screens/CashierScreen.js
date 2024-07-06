@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import { BarCodeScanner } from "expo-barcode-scanner";
+import { CameraView, Camera } from "expo-camera";
 import { DataTable } from 'react-native-paper';
 import { Audio } from 'expo-av';
 import { getProduct } from '../database/db';
 
 const CashierScreen = () => {
   const [hasPermission, setHasPermission] = useState(null);
-  const [showCamera, setShowCamera] = useState(false);
+  const [showCamera, setShowCamera] = useState(true);
   const [products, setProducts] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
   const [scanned, setScanned] = useState(false);
@@ -15,7 +15,7 @@ const CashierScreen = () => {
 
   useEffect(() => {
     const getCameraPermission = async () => {
-      const { status } = await BarCodeScanner.requestPermissionsAsync();
+      const { status } = await Camera.requestCameraPermissionsAsync();
       setHasPermission(status === 'granted');
     };
 
@@ -112,12 +112,12 @@ const CashierScreen = () => {
   return (
     <ScrollView>
       <View style={styles.container}>
-      {showCamera && ( <BarCodeScanner
+      {showCamera && ( <CameraView
           style={styles.camera}
-          onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
+          onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
         /> )}
         <TouchableOpacity onPress={() => setShowCamera(!showCamera)} style={styles.closeButton}>
-          <Text style={styles.buttonText}>{showCamera ? 'Kamerayı Aç' : 'Kamerayı Kapat'}</Text>
+          <Text style={styles.buttonText}>{showCamera ? 'Kamerayı Kapat' : 'Kamerayı Aç'}</Text>
         </TouchableOpacity>
         <DataTable>
           <DataTable.Header>

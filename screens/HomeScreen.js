@@ -13,8 +13,11 @@ export default function HomeScreen() {
       <TouchableOpacity style={styles.button} title="Ürün Listele" onPress={() => navigation.navigate('Ürün Listesi')} >
       <Text style={styles.buttonText}>Ürün Listele</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.button} title="Ürün Listele" onPress={() => navigation.navigate('Kasiyer')} >
+      <TouchableOpacity style={styles.button} title="Kasiyer" onPress={() => navigation.navigate('Kasiyer')} >
       <Text style={styles.buttonText}>Kasiyer</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.button} title="Ayarlar" onPress={() => navigation.navigate('Ayarlar')} >
+      <Text style={styles.buttonText}>Ayarlar</Text>
       </TouchableOpacity>
     </View>
   );

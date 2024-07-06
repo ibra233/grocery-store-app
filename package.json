@@ -27,7 +27,10 @@
     "react-native-screens": "3.31.1",
     "yup": "^1.4.0",
     "expo-sqlite": "~14.0.4",
-    "expo-av": "~14.0.6"
+    "expo-av": "~14.0.6",
+    "expo-file-system": "~17.0.1",
+    "expo-document-picker": "~12.0.2",
+    "expo-sharing": "~12.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"
