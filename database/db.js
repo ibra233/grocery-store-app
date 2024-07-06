@@ -12,7 +12,8 @@ export const createTables = async () => {
        name TEXT NOT NULL,
        quantity INTEGER NOT NULL,
        barcode TEXT NOT NULL UNIQUE,
-       price REAL NOT NULL
+       price REAL NOT NULL,
+       isQuickItem INTEGER
      );`
   );
 };

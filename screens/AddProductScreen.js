@@ -2,19 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { View, TextInput, Button, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useFormikContext, Formik } from 'formik';
 import * as Yup from 'yup';
-import {
-  insertProduct, createTables
-} from '../database/db';
+import { Checkbox } from 'react-native-paper';  // Checkbox import edildi
+import { insertProduct, createTables } from '../database/db';
 import { CameraView, Camera } from "expo-camera";
 import { Audio } from 'expo-av';
+
 const AddProductScreen = ({ navigation }) => {
   const [showCamera, setShowCamera] = useState(true);
   const [barcode, setBarcode] = useState('');
   const [sound, setSound] = useState();
+  const [isQuickItem, setIsQuickItem] = useState(false);  // Hızlı Ürün checkbox durumu
+
   const handleAddProduct = async (values) => {
     try {
       await createTables();
-      await insertProduct(values.name, parseInt(values.quantity), values.barcode, parseFloat(values.price));
+      await insertProduct(values.name, parseInt(values.quantity), values.barcode, parseFloat(values.price), isQuickItem); // Hızlı Ürün ekleme
       alert('Product added successfully');
       navigation.goBack();
     } catch (error) {
@@ -43,36 +45,32 @@ const AddProductScreen = ({ navigation }) => {
 
   const handleBarCodeScanned = ({ type, data }) => {
     setScanned(true);
-    setShowCamera(false)
+    setShowCamera(false);
     setBarcode(data);
     playSound();
   };
- 
-  async function playSound() {
-    console.log('Loading Sound');
-    const { sound } = await Audio.Sound.createAsync( require('../assets/read.mp3')
-    );
-    setSound(sound);
 
-    console.log('Playing Sound');
+  async function playSound() {
+    const { sound } = await Audio.Sound.createAsync(require('../assets/read.mp3'));
+    setSound(sound);
     await sound.playAsync();
   }
 
   useEffect(() => {
     return sound
       ? () => {
-          console.log('Unloading Sound');
           sound.unloadAsync();
         }
       : undefined;
   }, [sound]);
 
   if (hasPermission === null) {
-    return <Text>Requesting for camera permission</Text>;
+    return <Text>Kamera izni isteniyor...</Text>;
   }
   if (hasPermission === false) {
-    return <Text>No access to camera</Text>;
+    return <Text>Kameraya erişim izni yok</Text>;
   }
+
   return (
     <Formik
       initialValues={{ name: '', quantity: '', barcode: '', price: '' }}
@@ -115,12 +113,24 @@ const AddProductScreen = ({ navigation }) => {
             keyboardType="numeric"
           />
           {touched.price && errors.price && <Text style={styles.error}>{errors.price}</Text>}
+
+          {/* Hızlı Ürün checkbox'ı */}
+          <View style={styles.checkboxContainer}>
+            <Checkbox
+              status={isQuickItem ? 'checked' : 'unchecked'}
+              onPress={() => setIsQuickItem(!isQuickItem)}
+            />
+            <Text>Hızlı Ürün</Text>
+          </View>
+
           <Button title="Ürün Ekle" onPress={handleSubmit} />
 
-          {showCamera && (<CameraView
-            onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
-            style={styles.camera}
-          />)}
+          {showCamera && (
+            <CameraView
+              onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+              style={styles.camera}
+            />
+          )}
           {scanned && (
             <TouchableOpacity style={styles.button} onPress={() => { setScanned(false) & setShowCamera(true) }} >
               <Text style={styles.buttonText}>Yeniden Tara</Text>
@@ -163,7 +173,12 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 16,
     color: '#ffffff'
-  }
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
 });
 
 export default AddProductScreen;

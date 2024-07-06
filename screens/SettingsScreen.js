@@ -7,8 +7,9 @@ const SettingsScreen = () => {
   const handleImportDatabase = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({ type: '*/*' });
-      if (result.type === 'success') {
-        await importDatabase(result.uri);
+      console.log(result);
+      if (result.assets) {
+        await importDatabase(result.assets[0].uri);
         Alert.alert('Başarılı', 'Veritabanı başarıyla içe aktarıldı.');
       }
     } catch (error) {
