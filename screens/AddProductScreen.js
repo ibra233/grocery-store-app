@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, Button, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { View, TextInput, Button, StyleSheet, Text, TouchableOpacity, ToastAndroid } from 'react-native';
 import { useFormikContext, Formik } from 'formik';
 import * as Yup from 'yup';
 import { Checkbox } from 'react-native-paper';  // Checkbox import edildi
@@ -13,14 +13,21 @@ const AddProductScreen = ({ navigation }) => {
   const [sound, setSound] = useState();
   const [isQuickItem, setIsQuickItem] = useState(false);  // Hızlı Ürün checkbox durumu
 
-  const handleAddProduct = async (values) => {
+  const handleAddProduct = async (values, { resetForm }) => {
     try {
       await createTables();
-      await insertProduct(values.name, parseInt(values.quantity), values.barcode, parseFloat(values.price), isQuickItem); // Hızlı Ürün ekleme
-      alert('Product added successfully');
-      navigation.goBack();
+      await insertProduct(values.name, parseInt(values.quantity), values.barcode, parseFloat(values.price), parseInt(isQuickItem)); // Hızlı Ürün ekleme
+      ToastAndroid.show('Ürün başarıyla eklendi', ToastAndroid.SHORT);
+      resetForm(); // Formu sıfırla
     } catch (error) {
-      alert('Error adding product: ' + error.message);
+      console.log(`+${error}+`)
+      if (error == `Error: Call to function 'NativeDatabase.execAsync' has been rejected.
+→ Caused by: UNIQUE constraint failed: products.barcode`) {
+        ToastAndroid.show('Bu ürün daha önce eklendi.', ToastAndroid.LONG);
+      }else{
+        
+      }
+      ToastAndroid.show('Ürün eklenirken hata oluştu: ' + error.message, ToastAndroid.LONG);
     }
   };
 
@@ -59,8 +66,8 @@ const AddProductScreen = ({ navigation }) => {
   useEffect(() => {
     return sound
       ? () => {
-          sound.unloadAsync();
-        }
+        sound.unloadAsync();
+      }
       : undefined;
   }, [sound]);
 

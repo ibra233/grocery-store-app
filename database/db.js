@@ -19,8 +19,9 @@ export const createTables = async () => {
 };
 
 // Ürün ekleme
-export const insertProduct = async (name, quantity, barcode, price) => {
-  await db.execAsync(`INSERT INTO products (name, quantity, barcode, price) VALUES ('${name}', '${quantity}', '${barcode}', '${price}')`);
+export const insertProduct = async (name, quantity, barcode, price,isQuickItem) => {
+  const db =  SQLite.openDatabaseSync('grocery-store-stock.db');
+  await db.execAsync(`INSERT INTO products (name, quantity, barcode, price, isQuickItem) VALUES ('${name}', '${quantity}', '${barcode}', '${price}','${isQuickItem}')`);
 };
 
 // Tüm ürünleri getirme
