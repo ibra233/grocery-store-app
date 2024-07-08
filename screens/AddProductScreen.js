@@ -19,6 +19,7 @@ const AddProductScreen = ({ navigation }) => {
       await insertProduct(values.name, parseInt(values.quantity), values.barcode, parseFloat(values.price), Number(isQuickItem));
       ToastAndroid.show('Ürün başarıyla eklendi', ToastAndroid.SHORT);
       resetForm();
+      setBarcode('');
     } catch (error) {
       console.log(`+${error}+`)
       if (error.toString().includes('UNIQUE constraint failed: products.barcode')) {

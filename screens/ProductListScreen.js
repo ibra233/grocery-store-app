@@ -30,7 +30,7 @@ const ProductListScreen = () => {
   const handleDelete = async () => {
     try {
       await deleteProduct(selectedProductId);
-      Alert.alert('Success', 'Product deleted successfully');
+      Alert.alert('Success', 'Ürün başarıyla silindi.');
       loadProducts();
       setModalVisible(false);
     } catch (error) {
