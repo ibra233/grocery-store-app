@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Alert, Button,TextInput } from 'react-native';
 import { CameraView, Camera } from "expo-camera";
 import { DataTable } from 'react-native-paper';
 import { Audio } from 'expo-av';
-import { getProduct } from '../database/db';
+import { getProduct, getQuickItems } from '../database/db'; // getQuickItems fonksiyonu eklenmeli
 
 const CashierScreen = () => {
   const [hasPermission, setHasPermission] = useState(null);
@@ -12,6 +12,8 @@ const CashierScreen = () => {
   const [totalPrice, setTotalPrice] = useState(0);
   const [scanned, setScanned] = useState(false);
   const [sound, setSound] = useState();
+  const [quickItems, setQuickItems] = useState([]); // Hızlı ürünler için state
+  const [manualBarcode, setManualBarcode] = useState(""); // Manuel barkod girişi
 
   useEffect(() => {
     const getCameraPermission = async () => {
@@ -20,14 +22,28 @@ const CashierScreen = () => {
     };
 
     getCameraPermission();
+    loadQuickItems(); // Hızlı ürünleri yükle
   }, []);
 
   useEffect(() => {
     calculateTotal();
   }, [products]);
 
+  const loadQuickItems = async () => {
+    const items = await getQuickItems(); // Hızlı ürünleri getir
+    setQuickItems(items);
+  };
+  const handleManualBarcodeAdd = () => {
+    if (manualBarcode) {
+      handleBarCodeScanned({ type: null, data: manualBarcode });
+      setManualBarcode(""); // Manuel barkod inputunu sıfırla
+    } else {
+      Alert.alert('Hata', 'Lütfen geçerli bir barkod girin.');
+    }
+  };
+
   async function playSound() {
-    const { sound } = await Audio.Sound.createAsync( require('../assets/read.mp3'));
+    const { sound } = await Audio.Sound.createAsync(require('../assets/read.mp3'));
     setSound(sound);
     await sound.playAsync();
   }
@@ -35,8 +51,8 @@ const CashierScreen = () => {
   useEffect(() => {
     return sound
       ? () => {
-          sound.unloadAsync();
-        }
+        sound.unloadAsync();
+      }
       : undefined;
   }, [sound]);
 
@@ -57,7 +73,11 @@ const CashierScreen = () => {
     } else {
       Alert.alert('Ürün bulunamadı', `Barkod ${data} ile ürün bulunamadı.`);
     }
-    setTimeout(() => setScanned(false), 2000); // 2 saniye gecikme ekledik
+    setTimeout(() => setScanned(false), 1500);
+  };
+
+  const handleQuickItemPress = async (barcode) => {
+    handleBarCodeScanned({ type: null, data: barcode });
   };
 
   const calculateTotal = () => {
@@ -112,13 +132,26 @@ const CashierScreen = () => {
   return (
     <ScrollView>
       <View style={styles.container}>
-      {showCamera && ( <CameraView
-          style={styles.camera}
-          onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
-        /> )}
+        {showCamera && (
+          <CameraView
+            style={styles.camera}
+            onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+          />
+        )}
         <TouchableOpacity onPress={() => setShowCamera(!showCamera)} style={styles.closeButton}>
           <Text style={styles.buttonText}>{showCamera ? 'Kamerayı Kapat' : 'Kamerayı Aç'}</Text>
         </TouchableOpacity>
+        {/* Manuel barkod girişi */}
+        <View style={styles.manualBarcodeContainer}>
+          <TextInput
+            style={styles.manualBarcodeInput}
+            placeholder="Barkod Girin"
+            value={manualBarcode}
+            onChangeText={setManualBarcode}
+          />
+          <Button title="Ekle" onPress={handleManualBarcodeAdd} />
+        </View>
+
         <DataTable>
           <DataTable.Header>
             <DataTable.Title>İsim</DataTable.Title>
@@ -129,7 +162,11 @@ const CashierScreen = () => {
           </DataTable.Header>
           {products.map((product, index) => (
             <DataTable.Row key={index}>
-              <DataTable.Cell>{product.name}</DataTable.Cell>
+              <DataTable.Cell>
+              <Text style={{ flexWrap: 'wrap' }}>
+              {product.name}
+                  </Text>
+              </DataTable.Cell>
               <DataTable.Cell>{product.barcode}</DataTable.Cell>
               <DataTable.Cell>{product.quantity}</DataTable.Cell>
               <DataTable.Cell>{product.price.toFixed(2)}</DataTable.Cell>
@@ -140,6 +177,19 @@ const CashierScreen = () => {
         <View style={styles.totalPriceContainer}>
           <Text style={styles.totalPriceText}>Toplam Fiyat: {totalPrice.toFixed(2)}₺</Text>
         </View>
+      </View>
+      <Text style={styles.quickItemHeader}>Hızlı Ürünler </Text>
+      <View style={styles.quickItemsContainer}>
+
+        {quickItems.map((item) => (
+          <TouchableOpacity
+            key={item.barcode}
+            style={styles.quickItemButton}
+            onPress={() => handleQuickItemPress(item.barcode)}
+          >
+            <Text style={styles.quickItemButtonText}>{item.name} </Text>
+          </TouchableOpacity>
+        ))}
       </View>
     </ScrollView>
   );
@@ -161,6 +211,21 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderRadius: 5,
     alignItems: 'center',
+  },
+  quickItemHeader: {
+    flex: 1,
+    margin: 'auto',
+    fontSize: 25,
+    marginBottom: 15,
+  },
+  quickItemButton: {
+    marginLeft: 5,
+    backgroundColor: '#344ceb',
+    padding: 10,
+    borderRadius: 8
+  },
+  quickItemButtonText: {
+    color: 'white'
   },
   head: {
     height: 40,
@@ -211,6 +276,26 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
+  quickItemsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  manualBarcodeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  manualBarcodeInput: {
+    flex: 1,
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    marginRight: 10,
+  },
+  
 });
 
 export default CashierScreen;

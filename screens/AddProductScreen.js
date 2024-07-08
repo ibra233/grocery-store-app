@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, TextInput, Button, StyleSheet, Text, TouchableOpacity, ToastAndroid } from 'react-native';
 import { useFormikContext, Formik } from 'formik';
 import * as Yup from 'yup';
-import { Checkbox } from 'react-native-paper';  // Checkbox import edildi
+import { Checkbox } from 'react-native-paper';
 import { insertProduct, createTables } from '../database/db';
 import { CameraView, Camera } from "expo-camera";
 import { Audio } from 'expo-av';
@@ -11,23 +11,21 @@ const AddProductScreen = ({ navigation }) => {
   const [showCamera, setShowCamera] = useState(true);
   const [barcode, setBarcode] = useState('');
   const [sound, setSound] = useState();
-  const [isQuickItem, setIsQuickItem] = useState(false);  // Hızlı Ürün checkbox durumu
+  const [isQuickItem, setIsQuickItem] = useState(false);
 
   const handleAddProduct = async (values, { resetForm }) => {
     try {
       await createTables();
-      await insertProduct(values.name, parseInt(values.quantity), values.barcode, parseFloat(values.price), parseInt(isQuickItem)); // Hızlı Ürün ekleme
+      await insertProduct(values.name, parseInt(values.quantity), values.barcode, parseFloat(values.price), Number(isQuickItem));
       ToastAndroid.show('Ürün başarıyla eklendi', ToastAndroid.SHORT);
-      resetForm(); // Formu sıfırla
+      resetForm();
     } catch (error) {
       console.log(`+${error}+`)
-      if (error == `Error: Call to function 'NativeDatabase.execAsync' has been rejected.
-→ Caused by: UNIQUE constraint failed: products.barcode`) {
+      if (error.toString().includes('UNIQUE constraint failed: products.barcode')) {
         ToastAndroid.show('Bu ürün daha önce eklendi.', ToastAndroid.LONG);
-      }else{
-        
+      } else {
+        ToastAndroid.show('Ürün eklenirken hata oluştu: ' + error.message, ToastAndroid.LONG);
       }
-      ToastAndroid.show('Ürün eklenirken hata oluştu: ' + error.message, ToastAndroid.LONG);
     }
   };
 
@@ -106,7 +104,10 @@ const AddProductScreen = ({ navigation }) => {
           <TextInput
             style={styles.input}
             placeholder="Barkod"
-            onChangeText={handleChange('barcode')}
+            onChangeText={(text) => {
+              handleChange('barcode')(text);
+              setBarcode(text);
+            }}
             onBlur={handleBlur('barcode')}
             value={values.barcode = barcode}
           />
@@ -121,7 +122,6 @@ const AddProductScreen = ({ navigation }) => {
           />
           {touched.price && errors.price && <Text style={styles.error}>{errors.price}</Text>}
 
-          {/* Hızlı Ürün checkbox'ı */}
           <View style={styles.checkboxContainer}>
             <Checkbox
               status={isQuickItem ? 'checked' : 'unchecked'}

@@ -1,7 +1,10 @@
 import * as SQLite from 'expo-sqlite';
 import * as FileSystem from 'expo-file-system';
-const db =  SQLite.openDatabaseSync('grocery-store-stock.db');
 import * as Sharing from 'expo-sharing';
+import * as DocumentPicker from 'expo-document-picker';
+import XLSX from 'xlsx';
+
+const db = SQLite.openDatabaseSync('grocery-store-stock.db');
 
 // Tabloları oluşturma
 export const createTables = async () => {
@@ -19,9 +22,32 @@ export const createTables = async () => {
 };
 
 // Ürün ekleme
-export const insertProduct = async (name, quantity, barcode, price,isQuickItem) => {
-  const db =  SQLite.openDatabaseSync('grocery-store-stock.db');
-  await db.execAsync(`INSERT INTO products (name, quantity, barcode, price, isQuickItem) VALUES ('${name}', '${quantity}', '${barcode}', '${price}','${isQuickItem}')`);
+export const insertProduct = async (name, quantity, barcode, price, isQuickItem) => {
+  await db.execAsync(`INSERT INTO products (name, quantity, barcode, price, isQuickItem) VALUES ('${name}', '${quantity}', '${barcode}', '${price}', '${isQuickItem}')`);
+};
+
+// Ürün ekleme
+export const insertImportProduct = async (name, quantity, barcode, price, isQuickItem) => {
+  try {
+    await db.execAsync(`INSERT INTO products (name, quantity, barcode, price, isQuickItem) VALUES ('${name}', '${quantity}', '${barcode}', '${price}', '${isQuickItem}')`);
+  } catch (error) {
+    if (error.message.includes('UNIQUE constraint failed: products.barcode')) {
+      await updateProductByBarcode(name, quantity, barcode, price, isQuickItem);
+    } else {
+      throw error;
+    }
+  }
+};
+
+// Barkoda göre ürün güncelleme
+export const updateProductByBarcode = async (name, quantity, barcode, price, isQuickItem) => {
+  await db.runAsync('UPDATE products SET name = ?, quantity = ?, price = ?, isQuickItem = ? WHERE barcode = ?', [name, quantity, price, isQuickItem, barcode]);
+};
+
+// Hızlı ürünleri getirme
+export const getQuickItems = async () => {
+  const quickItems = await db.getAllAsync('SELECT * FROM products WHERE isQuickItem = 1');
+  return quickItems;
 };
 
 // Tüm ürünleri getirme
@@ -32,19 +58,18 @@ export const getProducts = async () => {
 
 // Barkod ile ürün getirme
 export const getProduct = async (barcode) => {
-  const row = await db.getFirstAsync(`SELECT * FROM products where barcode = '${barcode}'`);
+  const row = await db.getFirstAsync(`SELECT * FROM products WHERE barcode = '${barcode}'`);
   return row;
 };
 
 // ID ile ürün getirme
 export const getProductById = async (id) => {
-  const row = await db.getFirstAsync(`SELECT * FROM products where id = '${id}'`);
+  const row = await db.getFirstAsync(`SELECT * FROM products WHERE id = '${id}'`);
   return row;
 };
 
-// Ürün güncelleme
-export const updateProduct = async (id, quantity, price) => {
-  await db.runAsync('UPDATE products SET quantity = ?, price = ? WHERE id = ?', [quantity, price, id]);
+export const updateProduct = async (id, name, quantity, barcode, price, isQuickItem) => {
+  await db.runAsync('UPDATE products SET name = ?, quantity = ?, barcode = ?, price = ?, isQuickItem = ? WHERE id = ?', [name, quantity, barcode, price, isQuickItem, id]);
 };
 
 // Ürün silme
@@ -58,28 +83,34 @@ export const deleteDatabase = async () => {
   await FileSystem.deleteAsync(dbPath);
 };
 
-// Veritabanını içe aktarma
-export const importDatabase = async (uri) => {
-  const dbPath = `${FileSystem.documentDirectory}SQLite/grocery-store-stock.db`;
-  await FileSystem.copyAsync({
-    from: uri,
-    to: dbPath,
-  });
+// Veritabanını Excel'den içe aktarma
+export const importDatabaseFromExcel = async (uri) => {
+  const fileContent = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+  const workbook = XLSX.read(fileContent, { type: 'base64' });
+  const productsSheet = workbook.Sheets['Products'];
+  const products = XLSX.utils.sheet_to_json(productsSheet);
+
+  for (let product of products) {
+    await insertImportProduct(product.name, product.quantity, product.barcode, product.price, product.isQuickItem);
+  }
 };
 
-export const exportDatabase = async () => {
-  const dbPath = `${FileSystem.documentDirectory}SQLite/grocery-store-stock.db`;
-  const destPath = `${FileSystem.documentDirectory}SQLite/backup_${Date.now()}.db`;
+// Veritabanını Excel'e dışa aktarma ve paylaşma
+export const exportDatabaseToExcel = async () => {
+  const products = await getProducts();
+  const ws = XLSX.utils.json_to_sheet(products);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Products');
 
-  await FileSystem.copyAsync({
-    from: dbPath,
-    to: destPath,
-  });
+  const wbout = XLSX.write(wb, { type: 'base64', bookType: 'xlsx' });
+  const uri = `${FileSystem.documentDirectory}products.xlsx`;
+
+  await FileSystem.writeAsStringAsync(uri, wbout, { encoding: FileSystem.EncodingType.Base64 });
 
   if (await Sharing.isAvailableAsync()) {
-    await Sharing.shareAsync(destPath);
+    await Sharing.shareAsync(uri);
   } else {
-    Alert.alert('Paylaşma özelliği desteklenmiyor.');
+    alert('Paylaşma özelliği desteklenmiyor.');
   }
 };
 

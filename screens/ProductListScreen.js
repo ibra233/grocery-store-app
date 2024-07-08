@@ -62,7 +62,11 @@ const ProductListScreen = () => {
             </DataTable.Header>
             {products.map((product, index) => (
               <DataTable.Row key={index}>
-                <DataTable.Cell style={styles.cellName}>{product.name}</DataTable.Cell>
+                <DataTable.Cell style={styles.cellName}>
+                <Text style={{ flexWrap: 'wrap' }}>
+              {product.name}
+                  </Text>
+                </DataTable.Cell>
                 <DataTable.Cell style={styles.cellQuantity}>{product.quantity.toString()}</DataTable.Cell>
                 <DataTable.Cell style={styles.cellBarcode}>
                   <Text style={{ flexWrap: 'wrap' }}>

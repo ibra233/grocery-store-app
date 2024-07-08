@@ -2,16 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { View, TextInput, Button, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useFormikContext, Formik } from 'formik';
 import * as Yup from 'yup';
+import { Checkbox } from 'react-native-paper';
 import { updateProduct, getProductById, createTables } from '../database/db';
 import { CameraView, Camera } from "expo-camera";
 
 const UpdateProductScreen = ({ route, navigation }) => {
   const { productId } = route.params;
   const [showCamera, setShowCamera] = useState(true);
-  const [name,setName] = useState('');
+  const [name, setName] = useState('');
   const [barcode, setBarcode] = useState('');
-  const [quantity,setQuantity] = useState(0);
-  const [price,setPrice] = useState(0);
+  const [quantity, setQuantity] = useState(0);
+  const [price, setPrice] = useState(0);
+  const [isQuickItem, setIsQuickItem] = useState(false);
+
   useEffect(() => {
     loadProductDetails();
   }, []);
@@ -19,11 +22,11 @@ const UpdateProductScreen = ({ route, navigation }) => {
   const loadProductDetails = async () => {
     try {
       const product = await getProductById(productId);
-      console.log(product)
       setName(product.name);
-      setQuantity(parseInt( product.quantity));
+      setQuantity(parseInt(product.quantity));
       setPrice(parseFloat(product.price));
       setBarcode(product.barcode);
+      setIsQuickItem(product.isQuickItem === 1); // Check for 0 or 1
     } catch (error) {
       alert('Error loading product details: ' + error.message);
     }
@@ -31,8 +34,8 @@ const UpdateProductScreen = ({ route, navigation }) => {
 
   const handleUpdateProduct = async (values) => {
     try {
-      await updateProduct(productId, values.name, parseInt(values.quantity), values.barcode, parseFloat(values.price));
-      alert('Product updated successfully');
+      await updateProduct(productId, values.name, parseInt(values.quantity), values.barcode, parseFloat(values.price), Number(isQuickItem));
+      alert('Ürün başarıyla güncellendi.');
       navigation.goBack();
     } catch (error) {
       alert('Error updating product: ' + error.message);
@@ -60,7 +63,7 @@ const UpdateProductScreen = ({ route, navigation }) => {
 
   const handleBarCodeScanned = ({ type, data }) => {
     setScanned(true);
-    setShowCamera(false)
+    setShowCamera(false);
     setBarcode(data);
     alert(`Bar code with type ${type} and data ${data} has been scanned!`);
   };
@@ -74,7 +77,7 @@ const UpdateProductScreen = ({ route, navigation }) => {
 
   return (
     <Formik
-      initialValues={{ name:'', quantity:'', barcode: '', price: '' }}
+      initialValues={{ name: '', quantity: '', barcode: '', price: '' }}
       validationSchema={ProductSchema}
       onSubmit={handleUpdateProduct}
     >
@@ -83,15 +86,21 @@ const UpdateProductScreen = ({ route, navigation }) => {
           <TextInput
             style={styles.input}
             placeholder="Ürün İsmi"
-            onChangeText={handleChange('name')}
+            onChangeText={(text) => {
+              handleChange('name')(text);
+              setName(text);
+            }}
             onBlur={handleBlur('name')}
-            value={values.name=name}
+            value={values.name = name}
           />
           {touched.name && errors.name && <Text style={styles.error}>{errors.name}</Text>}
           <TextInput
             style={styles.input}
             placeholder="Adet"
-            onChangeText={handleChange('quantity')}
+            onChangeText={(text) => {
+              handleChange('quantity')(text);
+              setQuantity(text);
+            }}
             onBlur={handleBlur('quantity')}
             keyboardType="numeric"
             value={values.quantity = quantity.toString()}
@@ -100,7 +109,10 @@ const UpdateProductScreen = ({ route, navigation }) => {
           <TextInput
             style={styles.input}
             placeholder="Barkod"
-            onChangeText={handleChange('barcode')}
+            onChangeText={(text) => {
+              handleChange('barcode')(text);
+              setBarcode(text);
+            }}
             onBlur={handleBlur('barcode')}
             value={values.barcode = barcode}
           />
@@ -108,18 +120,32 @@ const UpdateProductScreen = ({ route, navigation }) => {
           <TextInput
             style={styles.input}
             placeholder="Fiyat"
-            onChangeText={handleChange('price')}
+            onChangeText={(text) => {
+              handleChange('price')(text);
+              setPrice(text);
+            }}
             onBlur={handleBlur('price')}
             value={values.price = price.toString()}
             keyboardType="numeric"
           />
           {touched.price && errors.price && <Text style={styles.error}>{errors.price}</Text>}
+
+          <View style={styles.checkboxContainer}>
+            <Checkbox
+              status={isQuickItem ? 'checked' : 'unchecked'}
+              onPress={() => setIsQuickItem(!isQuickItem)}
+            />
+            <Text>Hızlı Ürün</Text>
+          </View>
+
           <Button title="Ürün Güncelle" onPress={handleSubmit} />
 
-          {showCamera && (<CameraView
-            onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
-            style={styles.camera}
-          />)}
+          {showCamera && (
+            <CameraView
+              onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+              style={styles.camera}
+            />
+          )}
           {scanned && (
             <TouchableOpacity style={styles.button} onPress={() => { setScanned(false) & setShowCamera(true) }} >
               <Text style={styles.buttonText}>Yeniden Tara</Text>
@@ -162,7 +188,12 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 16,
     color: '#ffffff'
-  }
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
 });
 
 export default UpdateProductScreen;

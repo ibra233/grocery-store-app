@@ -1,15 +1,14 @@
 import React from 'react';
 import { View, StyleSheet, Text, Button, Alert } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import { createTables, deleteDatabase, importDatabase, exportDatabase } from '../database/db';
+import { createTables, deleteDatabase, importDatabaseFromExcel, exportDatabaseToExcel } from '../database/db';
 
 const SettingsScreen = () => {
   const handleImportDatabase = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({ type: '*/*' });
-      console.log(result);
       if (result.assets) {
-        await importDatabase(result.assets[0].uri);
+        await importDatabaseFromExcel(result.assets[0].uri);
         Alert.alert('Başarılı', 'Veritabanı başarıyla içe aktarıldı.');
       }
     } catch (error) {
@@ -19,7 +18,8 @@ const SettingsScreen = () => {
 
   const handleExportDatabase = async () => {
     try {
-      await exportDatabase();
+      await exportDatabaseToExcel();
+      Alert.alert('Başarılı', 'Veritabanı başarıyla dışa aktarıldı ve paylaşıldı.');
     } catch (error) {
       Alert.alert('Hata', 'Veritabanı dışa aktarma hatası: ' + error.message);
     }
