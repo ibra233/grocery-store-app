@@ -21,15 +21,76 @@ export const createTables = async () => {
   );
 };
 
-// Ürün ekleme
-export const insertProduct = async (name, quantity, barcode, price, isQuickItem) => {
-  await db.execAsync(`INSERT INTO products (name, quantity, barcode, price, isQuickItem) VALUES ('${name}', '${quantity}', '${barcode}', '${price}', '${isQuickItem}')`);
+const sanitizeInput = (input) => {
+  if (typeof input !== 'string') {
+    return input; // Eğer input bir string değilse, olduğu gibi geri döndür.
+  }
+  // Boşluklar, virgüller ve tek tırnak işaretini koruyarak, sadece tehlikeli karakterleri temizle
+  return input.replace(/[^\w\s,']/gi, '');
 };
 
 // Ürün ekleme
-export const insertImportProduct = async (name, quantity, barcode, price, isQuickItem) => {
+export const insertProduct = async (name, quantity, barcode, price, isQuickItem) => {
+
+  // Girdileri sanitize et
+  name = sanitizeInput(name);
+  quantity = sanitizeInput(quantity);
+  barcode = sanitizeInput(barcode);
+  price = sanitizeInput(price);
+  isQuickItem = sanitizeInput(isQuickItem);
+
+  const statement = await db.prepareAsync(
+   'INSERT INTO products (name, quantity, barcode, price, isQuickItem) VALUES ($name, $quantity, $barcode, $price, $isQuickItem)'
+  );
+
   try {
-    await db.execAsync(`INSERT INTO products (name, quantity, barcode, price, isQuickItem) VALUES ('${name}', '${quantity}', '${barcode}', '${price}', '${isQuickItem}')`);
+    // Parametreli sorgu ile güvenli şekilde veritabanına ekleme işlemi yap
+    const result = await statement.executeAsync({ 
+      $name: name, 
+      $quantity: quantity, 
+      $barcode: barcode, 
+      $price: price, 
+      $isQuickItem: isQuickItem 
+    });
+
+    console.log(result.lastInsertRowId, result.changes);
+  
+  } finally {
+    await statement.finalizeAsync();
+  }
+
+  // Parametreli sorgu kullanıldığı için, manuel sorgu yazma işlemini kaldırıyoruz
+  // Bu satır artık gereksiz:
+  // await db.execAsync(`INSERT INTO products (name, quantity, barcode, price, isQuickItem) VALUES ('${name}', '${quantity}', '${barcode}', '${price}', '${isQuickItem}')`);
+};
+
+
+// Ürün ekleme (import işlemi)
+export const insertImportProduct = async (name, quantity, barcode, price, isQuickItem) => {
+  // Girdileri sanitize et
+  name = sanitizeInput(name);
+  quantity = sanitizeInput(quantity);
+  barcode = sanitizeInput(barcode);
+  price = sanitizeInput(price);
+  isQuickItem = sanitizeInput(isQuickItem);
+
+  try {
+    const statement = await db.prepareAsync(
+      'INSERT INTO products (name, quantity, barcode, price, isQuickItem) VALUES ($name, $quantity, $barcode, $price, $isQuickItem)'
+    );
+
+    try {
+      const result = await statement.executeAsync({
+        $name: name,
+        $quantity: quantity,
+        $barcode: barcode,
+        $price: price,
+        $isQuickItem: isQuickItem,
+      });
+      console.log(result.lastInsertRowId, result.changes);
+    } finally {
+      await statement.finalizeAsync();
+    }
   } catch (error) {
     if (error.message.includes('UNIQUE constraint failed: products.barcode')) {
       await updateProductByBarcode(name, quantity, barcode, price, isQuickItem);
@@ -41,8 +102,20 @@ export const insertImportProduct = async (name, quantity, barcode, price, isQuic
 
 // Barkoda göre ürün güncelleme
 export const updateProductByBarcode = async (name, quantity, barcode, price, isQuickItem) => {
-  await db.runAsync('UPDATE products SET name = ?, quantity = ?, price = ?, isQuickItem = ? WHERE barcode = ?', [name, quantity, price, isQuickItem, barcode]);
+  // Girdileri sanitize et
+  name = sanitizeInput(name);
+  quantity = sanitizeInput(quantity);
+  barcode = sanitizeInput(barcode);
+  price = sanitizeInput(price);
+  isQuickItem = sanitizeInput(isQuickItem);
+
+  // Parametreli sorgu ile güvenli şekilde veritabanında güncelleme işlemi yap
+  await db.runAsync(
+    'UPDATE products SET name = ?, quantity = ?, price = ?, isQuickItem = ? WHERE barcode = ?',
+    [name, quantity, price, isQuickItem, barcode]
+  );
 };
+
 
 // Hızlı ürünleri getirme
 export const getQuickItems = async () => {
@@ -77,11 +150,7 @@ export const deleteProduct = async (id) => {
   await db.runAsync('DELETE FROM products WHERE id = ?', [id]);
 };
 
-// Veritabanını silme
-export const deleteDatabase = async () => {
-  const dbPath = `${FileSystem.documentDirectory}SQLite/grocery-store-stock.db`;
-  await FileSystem.deleteAsync(dbPath);
-};
+
 
 // Veritabanını Excel'den içe aktarma
 export const importDatabaseFromExcel = async (uri) => {

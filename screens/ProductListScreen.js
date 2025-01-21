@@ -53,8 +53,10 @@ const ProductListScreen = () => {
       <ScrollView>
         <View style={styles.container}>
           <DataTable>
-            <DataTable.Header>
-              <DataTable.Title style={styles.cellName}>İsim</DataTable.Title>
+            <DataTable.Header style={styles.headerBackground}>
+              <DataTable.Title style={styles.cellName}>
+                <Text style={styles.header}>İsim</Text>
+                </DataTable.Title>
               <DataTable.Title style={styles.cellQuantity}>Adet</DataTable.Title>
               <DataTable.Title style={styles.cellBarcode}>Barkod</DataTable.Title>
               <DataTable.Title style={styles.cellPrice}>Ücret</DataTable.Title>
@@ -156,6 +158,13 @@ const styles = StyleSheet.create({
   actionButtons: {
     flexDirection: 'column',
   },
+  headerBackground: {
+    backgroundColor: '#0390fc'
+  },
+  header:{
+    fontSize : 16,
+    fontWeight: 'bold'
+  }
 });
 
 export default ProductListScreen;

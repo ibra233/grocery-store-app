@@ -39,7 +39,6 @@ const SettingsScreen = () => {
       <Text style={styles.title}>Ayarlar</Text>
       <Button title="Veritabanını İçe Aktar" onPress={handleImportDatabase} />
       <Button title="Veritabanını Dışa Aktar ve Paylaş" onPress={handleExportDatabase} />
-      <Button title="Veritabanını Sil" onPress={handleDeleteDatabase} />
     </View>
   );
 };
