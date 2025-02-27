@@ -1,9 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Alert, Button,TextInput } from 'react-native';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  Button,
+  TextInput,
+} from "react-native";
 import { CameraView, Camera } from "expo-camera";
-import { DataTable } from 'react-native-paper';
-import { Audio } from 'expo-av';
-import { getProduct, getQuickItems } from '../database/db'; // getQuickItems fonksiyonu eklenmeli
+import { DataTable } from "react-native-paper";
+import { Audio } from "expo-av";
+import { getProduct, getQuickItems } from "../database/db"; // getQuickItems fonksiyonu eklenmeli
 
 const CashierScreen = () => {
   const [hasPermission, setHasPermission] = useState(null);
@@ -18,7 +27,7 @@ const CashierScreen = () => {
   useEffect(() => {
     const getCameraPermission = async () => {
       const { status } = await Camera.requestCameraPermissionsAsync();
-      setHasPermission(status === 'granted');
+      setHasPermission(status === "granted");
     };
 
     getCameraPermission();
@@ -38,12 +47,14 @@ const CashierScreen = () => {
       handleBarCodeScanned({ type: null, data: manualBarcode });
       setManualBarcode(""); // Manuel barkod inputunu sıfırla
     } else {
-      Alert.alert('Hata', 'Lütfen geçerli bir barkod girin.');
+      Alert.alert("Hata", "Lütfen geçerli bir barkod girin.");
     }
   };
 
   async function playSound() {
-    const { sound } = await Audio.Sound.createAsync(require('../assets/read.mp3'));
+    const { sound } = await Audio.Sound.createAsync(
+      require("../assets/read.mp3")
+    );
     setSound(sound);
     await sound.playAsync();
   }
@@ -51,8 +62,8 @@ const CashierScreen = () => {
   useEffect(() => {
     return sound
       ? () => {
-        sound.unloadAsync();
-      }
+          sound.unloadAsync();
+        }
       : undefined;
   }, [sound]);
 
@@ -62,7 +73,7 @@ const CashierScreen = () => {
     playSound();
     if (product) {
       setProducts((prevProducts) => {
-        const existingProduct = prevProducts.find(p => p.barcode === data);
+        const existingProduct = prevProducts.find((p) => p.barcode === data);
         if (existingProduct) {
           existingProduct.quantity += 1;
           return [...prevProducts];
@@ -71,7 +82,7 @@ const CashierScreen = () => {
         }
       });
     } else {
-      Alert.alert('Ürün bulunamadı', `Barkod ${data} ile ürün bulunamadı.`);
+      Alert.alert("Ürün bulunamadı", `Barkod ${data} ile ürün bulunamadı.`);
     }
     setTimeout(() => setScanned(false), 1500);
   };
@@ -82,7 +93,7 @@ const CashierScreen = () => {
 
   const calculateTotal = () => {
     let total = 0;
-    products.forEach(product => {
+    products.forEach((product) => {
       total += product.price * product.quantity;
     });
     setTotalPrice(total);
@@ -110,13 +121,22 @@ const CashierScreen = () => {
 
   const renderActions = (index) => (
     <View style={styles.actionsCell}>
-      <TouchableOpacity onPress={() => handleIncrease(index)} style={styles.touchableButton}>
+      <TouchableOpacity
+        onPress={() => handleIncrease(index)}
+        style={styles.touchableButton}
+      >
         <Text style={styles.buttonText}>+</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => handleDecrease(index)} style={styles.touchableButton}>
+      <TouchableOpacity
+        onPress={() => handleDecrease(index)}
+        style={styles.touchableButton}
+      >
         <Text style={styles.buttonText}>-</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => handleDelete(index)} style={styles.deleteButton}>
+      <TouchableOpacity
+        onPress={() => handleDelete(index)}
+        style={styles.deleteButton}
+      >
         <Text style={styles.buttonText}>Sil</Text>
       </TouchableOpacity>
     </View>
@@ -138,8 +158,13 @@ const CashierScreen = () => {
             onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
           />
         )}
-        <TouchableOpacity onPress={() => setShowCamera(!showCamera)} style={styles.closeButton}>
-          <Text style={styles.buttonText}>{showCamera ? 'Kamerayı Kapat' : 'Kamerayı Aç'}</Text>
+        <TouchableOpacity
+          onPress={() => setShowCamera(!showCamera)}
+          style={styles.closeButton}
+        >
+          <Text style={styles.buttonText}>
+            {showCamera ? "Kamerayı Kapat" : "Kamerayı Aç"}
+          </Text>
         </TouchableOpacity>
         {/* Manuel barkod girişi */}
         <View style={styles.manualBarcodeContainer}>
@@ -163,9 +188,7 @@ const CashierScreen = () => {
           {products.map((product, index) => (
             <DataTable.Row key={index}>
               <DataTable.Cell>
-              <Text style={{ flexWrap: 'wrap' }}>
-              {product.name}
-                  </Text>
+                <Text style={{ flexWrap: "wrap" }}>{product.name}</Text>
               </DataTable.Cell>
               <DataTable.Cell>{product.barcode}</DataTable.Cell>
               <DataTable.Cell>{product.quantity}</DataTable.Cell>
@@ -175,12 +198,13 @@ const CashierScreen = () => {
           ))}
         </DataTable>
         <View style={styles.totalPriceContainer}>
-          <Text style={styles.totalPriceText}>Toplam Fiyat: {totalPrice.toFixed(2)}₺</Text>
+          <Text style={styles.totalPriceText}>
+            Toplam Fiyat: {totalPrice.toFixed(2)}₺
+          </Text>
         </View>
       </View>
       <Text style={styles.quickItemHeader}>Hızlı Ürünler </Text>
       <View style={styles.quickItemsContainer}>
-
         {quickItems.map((item) => (
           <TouchableOpacity
             key={item.barcode}
@@ -199,103 +223,102 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   camera: {
     height: 300,
     marginBottom: 20,
   },
   closeButton: {
-    backgroundColor: '#6200ee',
+    backgroundColor: "#6200ee",
     padding: 10,
     marginBottom: 20,
     borderRadius: 5,
-    alignItems: 'center',
+    alignItems: "center",
   },
   quickItemHeader: {
     flex: 1,
-    margin: 'auto',
+    margin: "auto",
     fontSize: 25,
     marginBottom: 15,
   },
   quickItemButton: {
     marginLeft: 5,
-    backgroundColor: '#344ceb',
+    backgroundColor: "#344ceb",
     padding: 10,
-    borderRadius: 8
+    borderRadius: 8,
   },
   quickItemButtonText: {
-    color: 'white'
+    color: "white",
   },
   head: {
     height: 40,
-    backgroundColor: '#f1f8ff',
+    backgroundColor: "#f1f8ff",
   },
   headText: {
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
   },
   text: {
     margin: 6,
-    textAlign: 'center',
+    textAlign: "center",
   },
   row: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
+    flexDirection: "row",
+    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f1f1',
+    borderBottomColor: "#f1f1f1",
   },
   actionsCell: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
   },
   touchableButton: {
-    backgroundColor: '#6200ee',
+    backgroundColor: "#6200ee",
     paddingVertical: 5,
     paddingHorizontal: 10,
     borderRadius: 5,
     marginHorizontal: 2,
   },
   deleteButton: {
-    backgroundColor: '#ff0000',
+    backgroundColor: "#ff0000",
     paddingVertical: 5,
     paddingHorizontal: 10,
     borderRadius: 5,
     marginHorizontal: 2,
   },
   buttonText: {
-    color: 'white',
+    color: "white",
     fontSize: 12,
   },
   totalPriceContainer: {
     marginTop: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   totalPriceText: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   quickItemsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
     marginBottom: 20,
   },
   manualBarcodeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 20,
   },
   manualBarcodeInput: {
     flex: 1,
     height: 40,
-    borderColor: 'gray',
+    borderColor: "gray",
     borderWidth: 1,
     paddingHorizontal: 10,
     marginRight: 10,
   },
-  
 });
 
 export default CashierScreen;

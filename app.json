@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -28,6 +29,9 @@
       "eas": {
         "projectId": "20b54710-b205-43bf-a29e-d81cabe11bb7"
       }
-    }
+    },
+    "plugins": [
+      "expo-sqlite"
+    ]
   }
 }
